@@ -1,4 +1,3 @@
-#client
 # Example TCP socket client that connects to a server that upper cases text
 import sys
 import os

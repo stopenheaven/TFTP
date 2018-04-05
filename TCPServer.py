@@ -1,4 +1,3 @@
-#server
 # TCP server program that upper cases text sent from the client
 from socket import *
 import sys
