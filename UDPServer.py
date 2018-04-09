@@ -83,7 +83,6 @@ elif (getorput == 'GET' or getorput == 'get'):
 	# Obrim el fitxer en mode lectura binaria i llegim el su contingut
 	with open(ARXIU, "rb") as arxiu:
 		buffer = arxiu.read()
-
 	while True:
 		# Send how many byte of file
 		serverSocket.sendto(str(len(buffer)), clientAddress)
