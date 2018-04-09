@@ -30,8 +30,15 @@ if (getorput == 'PUT' or getorput == 'put'):
 	# Receive the file and confirm this
 	ARXIU, clientAddress = serverSocket.recvfrom(512)
 	print "File:", ARXIU
-	message = 'Perfecte'
+	print ''
+	okarxiu = 'ok_arxiu'
+	serverSocket.sendto(okarxiu, clientAddress)
 
+	mida_paq, clientAddress = serverSocket.recvfrom(512)
+	print 'Paquet size:', mida_paq
+	print ''
+
+	message = 'Perfecte'
 	serverSocket.sendto(message, clientAddress)
 
 	while True:
@@ -53,13 +60,15 @@ if (getorput == 'PUT' or getorput == 'put'):
 				# Ens preparem per rebre l'arxiu amb longitud
 				# especifica
 				while (buffer < int(rebut)):
-					data, clientAddress = serverSocket.recvfrom(1)
+					data, clientAddress = serverSocket.recvfrom(int(mida_paq))
 					if not len(data):
 						# Si no rebem dades sortim del bucle
 						break
 					# Escrivim cada byte en l'arxiu i augmentem el buffer
 					arxiu.write(data)
-					buffer += 1
+					buffer += int(mida_paq)
+
+				buffer = buffer - int(mida_paq) + 1
 
 				if buffer == int(rebut):
 					print "File downloaded successfully"
@@ -77,25 +86,43 @@ elif (getorput == 'GET' or getorput == 'get'):
 	# Receive the file and confirm this
 	ARXIU, clientAddress = serverSocket.recvfrom(512)
 	print "ARXIU:", ARXIU
+	okarxiu = 'ok_arxiu'
+	serverSocket.sendto(okarxiu, clientAddress)
+
+	mida_paq, clientAddress = serverSocket.recvfrom(512)
+	print 'Paquet size:', mida_paq, 'Bytes'
+	print ''
+
 	sentence = 'Perfecte'
 	serverSocket.sendto(sentence, clientAddress)
 
 	# Obrim el fitxer en mode lectura binaria i llegim el su contingut
 	with open(ARXIU, "rb") as arxiu:
 		buffer = arxiu.read()
+
 	while True:
+		with open(ARXIU, "rb") as arxiu_size:
+			size = arxiu_size.read()
 		# Send how many byte of file
-		serverSocket.sendto(str(len(buffer)), clientAddress)
+		serverSocket.sendto(str(len(size)), clientAddress)
+
+		siz = len(size)
+
+		arxiu = open(ARXIU, 'rb')
+		buffer = arxiu.read(int(mida_paq))
 
 		# Wait server answer
 		rebut, clientAddress = serverSocket.recvfrom(10)
 		if rebut == "OK":
 			# If is ok send file
-			for byte in buffer:
-				#send file byte to byte
-				serverSocket.sendto(byte, clientAddress)
+			while buffer:
+				# Send file byte to byte
+				serverSocket.sendto(buffer, clientAddress)
+				buffer = arxiu.read(int(mida_paq))
 
 			break
 
-# Close
-serverSocket.close()
+	print 'Upload maded!'
+
+	# Close
+	serverSocket.close()

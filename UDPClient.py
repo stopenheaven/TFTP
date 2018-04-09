@@ -33,6 +33,7 @@ boolea70 = False
 boolea80 = False
 boolea90 = False
 boolea95 = False
+comprovar = False
 
 # Open the TCP connection to the server at the specified port
 clientSocket.connect((serverName,serverPort))
@@ -54,6 +55,37 @@ if (option == 'put' or option == 'PUT'):
 	# Send name File
 	message = ARXIU
 	clientSocket.sendto(message, (serverName, serverPort))
+	okarxiu, serverAddress = clientSocket.recvfrom(10)
+
+	# Choose the paquet size how you want transfer
+	while comprovar == False:
+		paquet_size = raw_input('Choose the paquet size (8, 16, 32, ... , 1024 bytes): ')
+		if paquet_size == '8':
+			comprovar = True
+		elif paquet_size == '16':
+			comprovar = True
+		elif paquet_size == '32':
+			comprovar = True
+		elif paquet_size == '64':
+			comprovar = True
+		elif paquet_size == '128':
+			comprovar = True
+		elif paquet_size == '256':
+			comprovar = True
+		elif paquet_size == '512':
+			comprovar = True
+		elif paquet_size == '1024':
+			comprovar = True
+		else:
+			print ("Error: try again")
+			print ''
+
+	print "The paquet size is", paquet_size, "Bytes"
+	clientSocket.sendto(paquet_size, (serverName, serverPort))
+	print ''
+
+	print 'Start upload to server'
+	print ''
 
 	# Wait server answer
 	modifiedMessage, serverAddress = clientSocket.recvfrom(512)
@@ -61,75 +93,77 @@ if (option == 'put' or option == 'PUT'):
 		print "error en enviament de nom ARXIU"
 		clientSocket.close()
 
-	# Obrim el fitxer en mode lectura binaria i llegim el su contingut
-	with open(ARXIU, "rb") as arxiu:
-		buffer = arxiu.read()
+	while True:
+		# Obrim el fitxer en mode lectura binaria i llegim el su contingut
+		with open(ARXIU, "rb") as arxiu_size:
+			size = arxiu_size.read()
+		# Send how many byte of file
+		clientSocket.sendto(str(len(size)), (serverName, serverPort))
 
-	# Send how many byte of file
-	clientSocket.sendto(str(len(buffer)), (serverName, serverPort))
+		siz = len(size)
 
-	mida=len(buffer)
+		arxiu = open(ARXIU, 'rb')
+		buffer = arxiu.read(int(paquet_size))
 
-	# Wait Server answer
-	rebut, serverAddress = clientSocket.recvfrom(2048)
-	if rebut == "OK":
-			# En cas que sigui correcte enviar l'arxiu byte per
-			# byte i sortim del while
-			for byte in buffer:
-				clientSocket.sendto(byte, (serverName, serverPort))
-
-				aux = auxiliar*100/mida
-
-				if(aux<=5 and boolea5 == False):
+		# Wait server answer
+		rebut, serverAddress = clientSocket.recvfrom(10)
+		if rebut == "OK":
+			# If is ok send file
+			while buffer:
+				# Send file byte to byte
+				clientSocket.sendto(buffer, (serverName, serverPort))
+				buffer = arxiu.read(int(paquet_size))
+				aux = auxiliar * 100 / siz
+				if (aux <= 5 and boolea5 == False):
 					boolea5 = True
 					proces = '[=>        5%          ]'
 					print proces
-				elif(aux>=5 and aux <= 15 and boolea10 == False):
+				elif (aux >= 5 and aux <= 15 and boolea10 == False):
 					boolea10 = True
 					proces = '[===>      10%         ]'
 					print proces
-				elif(aux>=15 and aux <= 25 and boolea20 == False):
+				elif (aux >= 15 and aux <= 25 and boolea20 == False):
 					boolea20 = True
 					proces = '[=====>    20%         ]'
 					print proces
-				elif(aux>=25 and aux <= 35 and boolea30 == False):
+				elif (aux >= 25 and aux <= 35 and boolea30 == False):
 					boolea30 = True
 					proces = '[=======>  30%         ]'
 					print proces
-				elif(aux>=35 and aux <= 45 and boolea40 == False):
+				elif (aux >= 35 and aux <= 45 and boolea40 == False):
 					boolea40 = True
 					proces = '[=========>40%         ]'
 					print proces
-				elif(aux>=45 and aux <= 55 and boolea50 == False):
+				elif (aux >= 45 and aux <= 55 and boolea50 == False):
 					proces = '[==========50%         ]'
 					boolea50 = True
 					print proces
-				elif(aux>=55 and aux <= 65 and boolea60 == False):
+				elif (aux >= 55 and aux <= 65 and boolea60 == False):
 					boolea60 = True
 					proces = '[==========60%>        ]'
 					print proces
-				elif(aux>=65 and aux <= 75 and boolea70 == False):
+				elif (aux >= 65 and aux <= 75 and boolea70 == False):
 					boolea70 = True
 					proces = '[==========70%==>      ]'
 					print proces
-				elif(aux>=75 and aux <= 85 and boolea80 == False):
+				elif (aux >= 75 and aux <= 85 and boolea80 == False):
 					boolea80 = True
 					proces = '[==========80%====>    ]'
 					print proces
-				elif(aux>=85 and aux <= 95 and boolea90 == False):
+				elif (aux >= 85 and aux <= 95 and boolea90 == False):
 					boolea90 = True
 					proces = '[==========90%======>  ]'
 					print proces
-				elif (aux>95 and boolea95 == False):
+				elif (aux > 95 and boolea95 == False):
 					boolea95 = True
 					proces = '[==========95%=======> ]'
 					print proces
-				auxiliar += 1
-
+				auxiliar += int(paquet_size)
+			break
 	proces = '[==========100%========]'
 	print proces
 
-	# Close connection
+	# Close
 	clientSocket.close()
 
 elif (option == 'get' or option == 'GET'):
@@ -143,6 +177,35 @@ elif (option == 'get' or option == 'GET'):
 	# Send name File
 	sentence = ARXIU
 	clientSocket.sendto(sentence, clientAddress)
+	okarxiu, serverAddress = clientSocket.recvfrom(10)
+
+	# Choose the paquet size how you want transfer
+	while comprovar == False:
+		paquet_size = raw_input('Choose the paquet size (8, 16, 32, ... , 1024 bytes): ')
+		if paquet_size == '8':
+			comprovar = True
+		elif paquet_size == '16':
+			comprovar = True
+		elif paquet_size == '32':
+			comprovar = True
+		elif paquet_size == '64':
+			comprovar = True
+		elif paquet_size == '128':
+			comprovar = True
+		elif paquet_size == '256':
+			comprovar = True
+		elif paquet_size == '512':
+			comprovar = True
+		elif paquet_size == '1024':
+			comprovar = True
+		else:
+			print ("Error: try again")
+			print ''
+
+	print "The paquet size is", paquet_size, "Bytes"
+	clientSocket.sendto(paquet_size, (serverName, serverPort))
+	print ''
+
 	# Wait server answer
 	modifiedSentence, clientAddress = clientSocket.recvfrom(512)
 	if modifiedSentence != 'Perfecte':
@@ -153,7 +216,7 @@ elif (option == 'get' or option == 'GET'):
 		# Receive the size of file
 		rebut, clientAddress = clientSocket.recvfrom(1024)
 		if rebut:
-			print "File size:", rebut
+			print "File size:", rebut, 'Bytes'
 			print 'Start download from server'
 			print ''
 		# Verifiquem que el que rebem sigui un numero, en cas que
@@ -173,14 +236,14 @@ elif (option == 'get' or option == 'GET'):
 				mida=int(rebut)
 
 				while (buffer < mida):
-					data, clientAddress = clientSocket.recvfrom(1)
+					data, clientAddress = clientSocket.recvfrom(int(paquet_size))
 					if not len(data):
 						# Si no rebem dades sortim del bucle
 						break
 					# Escrivim cada byte en l'arxiu i
 					# augmentem el buffer
 					arxiu.write(data)
-					buffer += 1
+					buffer += int(paquet_size)
 
 					aux = auxiliar*100/mida
 					if(aux<=5 and boolea5 == False):
@@ -227,11 +290,13 @@ elif (option == 'get' or option == 'GET'):
 						boolea95 = True
 						proces = '[==========95%=======> ]'
 						print proces
-					auxiliar += 1
+					auxiliar += int(paquet_size)
 
 				proces = '[==========100%========]'
 				print proces
 				print ''
+
+				buffer = buffer - int(paquet_size) + 1
 
 				if buffer == int(rebut):
 					print "File downloaded successfully"
