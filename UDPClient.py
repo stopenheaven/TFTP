@@ -232,7 +232,6 @@ elif (option == 'get' or option == 'GET'):
 			with open("arxiu", "wb") as arxiu:
 				# Ens preparem per rebre l'arxiu amb longitud
 				# especifica
-
 				mida=int(rebut)
 
 				while (buffer < mida):
