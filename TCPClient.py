@@ -291,9 +291,9 @@ elif (option == 'get' or option == 'GET'):
 
     buffer = buffer - int(paquet_size) + 1
 
-    if buffer == int(rebut):
-        print "File downloaded successfully"
-    else:
-        print "An error/incomplete file has happened"
+    # if buffer == int(rebut):
+    #     print "File downloaded successfully"
+    # else:
+    #     print "An error/incomplete file has happened"
 
 clientSocket.close()
