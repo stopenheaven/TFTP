@@ -57,8 +57,10 @@ if (option == 'put' or option == 'PUT'):
 
     # Choose the paquet size how you want transfer
     while comprovar == False:
-        paquet_size = raw_input('Choose the paquet size (8, 16, 32, ... , 1024 bytes): ')
-        if paquet_size == '8':
+        paquet_size = raw_input('Choose the paquet size (1, 8, 16, 32, ... , 1024 bytes): ')
+        if paquet_size == '1':
+            comprovar = True
+        elif paquet_size == '8':
             comprovar = True
         elif paquet_size == '16':
             comprovar = True
@@ -178,8 +180,10 @@ elif (option == 'get' or option == 'GET'):
 
     # Choose the paquet size how you want transfer
     while comprovar == False:
-        paquet_size = raw_input('Choose the paquet size (8, 16, 32, ... , 1024 bytes): ')
-        if paquet_size == '8':
+        paquet_size = raw_input('Choose the paquet size (1, 8, 16, 32, ... , 1024 bytes): ')
+        if paquet_size == '1':
+            comprovar = True
+        elif paquet_size == '8':
             comprovar = True
         elif paquet_size == '16':
             comprovar = True
