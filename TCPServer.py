@@ -1,5 +1,6 @@
 # TCP server program that upper cases text sent from the client
 from socket import *
+from libs.structs import *
 import sys
 import os
 import commands
@@ -27,9 +28,13 @@ connectionSocket, addr = serverSocket.accept()
 
 getorput = connectionSocket.recv(128)
 
-if (getorput == 'PUT' or getorput == 'put'):
+if getorput == 'PUT' or getorput == 'put':
     print "Client select:", getorput
     print ''
+
+    nbloc = 0
+    blocs = total_file(4)
+    blocs.setNbloc(nbloc)
 
     # Receive the file and confirm this
     ARXIU = connectionSocket.recv(512)
@@ -62,8 +67,7 @@ if (getorput == 'PUT' or getorput == 'put'):
             buffer = 0
             # Obrim l'arxiu en mode escriptura
             with open("arxiu", "wb") as arxiu:
-                # Ens preparem per rebre l'arxiu amb longitud
-                # especifica
+                # Ens preparem per rebre l'arxiu amb longitud especifica
                 while (buffer < int(rebut)):
                     data = connectionSocket.recv(int(mida_paq))
                     if not len(data):
@@ -71,6 +75,8 @@ if (getorput == 'PUT' or getorput == 'put'):
                         break
                     # Escrivim cada byte en l'arxiu i
                     # augmentem el buffer
+                    connectionSocket.send(blocs)
+                    nblocs += 1
                     arxiu.write(data)
                     buffer += int(mida_paq)
 
@@ -82,7 +88,7 @@ if (getorput == 'PUT' or getorput == 'put'):
                 #     print "An error/incomplete file has happened"
             break
 
-elif (getorput == 'GET' or getorput == 'get'):
+elif getorput == 'GET' or getorput == 'get':
     print "Client select:", getorput
     print ''
 
