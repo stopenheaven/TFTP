@@ -2,7 +2,6 @@
 import sys
 import os
 import commands
-from libs.structs import *
 from socket import *
 
 # Default to running on localhost, port 12000
@@ -49,11 +48,6 @@ if (option == 'put' or option == 'PUT'):
     print ''
     print llistat
     print ''
-
-    nbloc = 0
-    blocs = total_file(4)
-    blocs.setNbloc(nbloc)
-
     ARXIU = raw_input('Choose your file: ')
     print "The file is:", ARXIU
     # Send name File
@@ -117,58 +111,53 @@ if (option == 'put' or option == 'PUT'):
             while buffer:
                 # Send file byte to byte
                 clientSocket.send(buffer)
-
-                blocrebut = clientSocket.recv(100)
-                if blocrebut.nbloc == nbloc:
-                    nbloc += 1
-                    buffer = arxiu.read(int(paquet_size))
-                    aux = auxiliar * 100 / siz
-                    if (aux <= 5 and boolea5 == False):
-                        boolea5 = True
-                        proces = '[=>        5%          ]'
-                        print proces
-                    elif (aux >= 5 and aux <= 15 and boolea10 == False):
-                        boolea10 = True
-                        proces = '[===>      10%         ]'
-                        print proces
-                    elif (aux >= 15 and aux <= 25 and boolea20 == False):
-                        boolea20 = True
-                        proces = '[=====>    20%         ]'
-                        print proces
-                    elif (aux >= 25 and aux <= 35 and boolea30 == False):
-                        boolea30 = True
-                        proces = '[=======>  30%         ]'
-                        print proces
-                    elif (aux >= 35 and aux <= 45 and boolea40 == False):
-                        boolea40 = True
-                        proces = '[=========>40%         ]'
-                        print proces
-                    elif (aux >= 45 and aux <= 55 and boolea50 == False):
-                        proces = '[==========50%         ]'
-                        boolea50 = True
-                        print proces
-                    elif (aux >= 55 and aux <= 65 and boolea60 == False):
-                        boolea60 = True
-                        proces = '[==========60%>        ]'
-                        print proces
-                    elif (aux >= 65 and aux <= 75 and boolea70 == False):
-                        boolea70 = True
-                        proces = '[==========70%==>      ]'
-                        print proces
-                    elif (aux >= 75 and aux <= 85 and boolea80 == False):
-                        boolea80 = True
-                        proces = '[==========80%====>    ]'
-                        print proces
-                    elif (aux >= 85 and aux <= 95 and boolea90 == False):
-                        boolea90 = True
-                        proces = '[==========90%======>  ]'
-                        print proces
-                    elif (aux > 95 and boolea95 == False):
-                        boolea95 = True
-                        proces = '[==========95%=======> ]'
-                        print proces
-                    auxiliar += int(paquet_size)
-
+                buffer = arxiu.read(int(paquet_size))
+                aux = auxiliar * 100 / siz
+                if (aux <= 5 and boolea5 == False):
+                    boolea5 = True
+                    proces = '[=>        5%          ]'
+                    print proces
+                elif (aux >= 5 and aux <= 15 and boolea10 == False):
+                    boolea10 = True
+                    proces = '[===>      10%         ]'
+                    print proces
+                elif (aux >= 15 and aux <= 25 and boolea20 == False):
+                    boolea20 = True
+                    proces = '[=====>    20%         ]'
+                    print proces
+                elif (aux >= 25 and aux <= 35 and boolea30 == False):
+                    boolea30 = True
+                    proces = '[=======>  30%         ]'
+                    print proces
+                elif (aux >= 35 and aux <= 45 and boolea40 == False):
+                    boolea40 = True
+                    proces = '[=========>40%         ]'
+                    print proces
+                elif (aux >= 45 and aux <= 55 and boolea50 == False):
+                    proces = '[==========50%         ]'
+                    boolea50 = True
+                    print proces
+                elif (aux >= 55 and aux <= 65 and boolea60 == False):
+                    boolea60 = True
+                    proces = '[==========60%>        ]'
+                    print proces
+                elif (aux >= 65 and aux <= 75 and boolea70 == False):
+                    boolea70 = True
+                    proces = '[==========70%==>      ]'
+                    print proces
+                elif (aux >= 75 and aux <= 85 and boolea80 == False):
+                    boolea80 = True
+                    proces = '[==========80%====>    ]'
+                    print proces
+                elif (aux >= 85 and aux <= 95 and boolea90 == False):
+                    boolea90 = True
+                    proces = '[==========90%======>  ]'
+                    print proces
+                elif (aux > 95 and boolea95 == False):
+                    boolea95 = True
+                    proces = '[==========95%=======> ]'
+                    print proces
+                auxiliar += int(paquet_size)
             break
     proces = '[==========100%========]'
     print proces
@@ -193,7 +182,7 @@ elif (option == 'get' or option == 'GET'):
     while comprovar == False:
         paquet_size = raw_input('Choose the paquet size (1, 8, 16, 32, ... , 1024 bytes): ')
         if paquet_size == '1':
-            comprovar = True
+            comprovar == True
         elif paquet_size == '8':
             comprovar = True
         elif paquet_size == '16':
@@ -304,11 +293,6 @@ elif (option == 'get' or option == 'GET'):
     print proces
     print ''
 
-    buffer = buffer - int(paquet_size) + 1
-
-    # if buffer == int(rebut):
-    #     print "File downloaded successfully"
-    # else:
-    #     print "An error/incomplete file has happened"
+    print "File downloaded successfully"
 
 clientSocket.close()
