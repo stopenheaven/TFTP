@@ -3,9 +3,11 @@ from socket import *
 import sys
 import os
 import commands
+import json
 
 # Default port number server will listen on
 serverPort = 12000
+nbloc = 0
 
 # Optional server port number
 if (len(sys.argv) > 1):
@@ -21,43 +23,75 @@ serverSocket.bind(('', serverPort))
 serverSocket.listen(1)
 os.system("ifconfig | grep -w inet")
 
+print ''
+
 print 'The server is ready to receive'
 
 connectionSocket, addr = serverSocket.accept()
 
-getorput = connectionSocket.recv(128)
+llistat = commands.getoutput('ls -I "*.py"')
+
+llista = [3, nbloc, llistat]
+
+check_llista = False
+while check_llista == False:
+    send_txt = json.dumps(llista)
+    connectionSocket.send(send_txt)
+
+    ack_llista = connectionSocket.recv(50)
+    llista_ack = json.loads(ack_llista)
+    if llista_ack[1] == nbloc:
+        check_llista = True
+
+option = connectionSocket.recv(50)
+
+llista = json.loads(option)
+
+okjson = [4, nbloc]
+send_txt = json.dumps(okjson)
+connectionSocket.send(send_txt)
+
+codi = llista[0]
+ARXIU = llista[1]
 
 nbloc = 0
 
-if (getorput == 'PUT' or getorput == 'put'):
-    print "Client select:", getorput
+if codi == 1:
+    print "Client select: PUT "
     print ''
 
     # Receive the file and confirm this
-    ARXIU = connectionSocket.recv(512)
-    print "The file is:", ARXIU
+    print "The file is:", llista[1]
     print ''
-    okarxiu = 'ok_arxiu'
-    connectionSocket.send(okarxiu)
 
-    mida_paq = connectionSocket.recv(512)
+
+    size_paq = connectionSocket.recv(50)
+    paq_mida = json.loads(size_paq)
+
+    mida_paq = paq_mida[2]
+
     print 'Paquet size:', mida_paq
     print ''
 
-    sentence = 'Perfecte'
-    connectionSocket.send(sentence)
+    nbloc = paq_mida[1]
+
+    ack_paq_size = [4, nbloc]
+    send_txt = json.dumps(ack_paq_size)
+    connectionSocket.send(send_txt)
 
     while True:
         # Receive the size of file
-        rebut = connectionSocket.recv(1024).strip()
-        if rebut:
+        file_size = connectionSocket.recv(50)
+        size_file = json.loads(file_size)
+        rebut = size_file[2]
+        if size_file:
             print "File size:", rebut, 'Bytes'
+            nbloc = size_file[1]
             print ''
-        # Verifiquem que el que rebem sigui un numero, en cas que
-        # sigui aixi enviem OK al client indicant que estem llestos
-        # per rebre l'arxiu
-        if rebut.isdigit():
-            connectionSocket.send("OK")
+
+            ack_file_size = [4, nbloc]
+            send_txt = json.dumps(ack_file_size)
+            connectionSocket.send(send_txt)
 
             # Inicialitzem el contador que guarda la quantitat de
             # bytes rebuts
@@ -67,7 +101,15 @@ if (getorput == 'PUT' or getorput == 'put'):
                 # Ens preparem per rebre l'arxiu amb longitud
                 # especifica
                 while (buffer < int(rebut)):
-                    data = connectionSocket.recv(int(mida_paq))
+                    data_file = connectionSocket.recv(int(mida_paq)+16)
+                    print data_file
+                    file_data = json.loads(data_file)
+                    data = file_data[2]
+                    nbloc = file_data[1]
+
+                    ack_file_data = [4, nbloc]
+                    send_txt = json.dumps(ack_file_data)
+                    connectionSocket.send(send_txt)
                     if not len(data):
                         # Si no rebem dades sortim del bucle
                         break
@@ -79,27 +121,26 @@ if (getorput == 'PUT' or getorput == 'put'):
                 print "File downloaded successfully"
             break
 
-elif (getorput == 'GET' or getorput == 'get'):
-    print "Client select:", getorput
+elif codi == 2:
+    print "Client select: GET "
     print ''
 
-    llistat = commands.getoutput('ls -I "*.py"')
-    connectionSocket.send(llistat)
-
-    # Receive the file and confirm this
-    ARXIU = connectionSocket.recv(512)
     print "ARXIU:", ARXIU
-    okarxiu = 'ok_arxiu'
-    connectionSocket.send(okarxiu)
 
-    mida_paq = connectionSocket.recv(512)
-    print 'Paquet size:', mida_paq, 'Bytes'
+    size_paq = connectionSocket.recv(50)
+    paq_mida = json.loads(size_paq)
+
+    mida_paq = paq_mida[2]
+    nbloc = paq_mida[1]
+
+    print 'Paquet size:', mida_paq
     print ''
 
-    sentence = 'Perfecte'
-    connectionSocket.send(sentence)
+    ack_paq_size = [4, nbloc]
+    send_txt = json.dumps(ack_paq_size)
+    connectionSocket.send(send_txt)
 
-    # Obrim el fitxer en mode lectura binaria i llegim el su contingut
+    # Obrim el fitxer en mode lectura binaria i llegim el seu contingut
     with open(ARXIU, "rb") as arxiu:
         buffer = arxiu.read()
 
@@ -107,16 +148,19 @@ elif (getorput == 'GET' or getorput == 'get'):
         with open(ARXIU, "rb") as arxiu_size:
             size = arxiu_size.read()
         # Send how many byte of file
-        connectionSocket.send(str(len(size)))
-
         siz = len(size)
+        # Send how many byte of file
+        mida_file = [3, nbloc, siz]
+        send_txt = json.dumps(mida_file)
+        connectionSocket.send(send_txt)
 
         arxiu = open(ARXIU, 'rb')
         buffer = arxiu.read(int(mida_paq))
 
-        # Wait server answer
-        rebut = connectionSocket.recv(10)
-        if rebut == "OK":
+        # Wait server answer file size
+        ack_file_size = connectionSocket.recv(50)
+        file_size_ack = json.loads(ack_file_size)
+        if file_size_ack[1] == nbloc:
             # If is ok send file
             while buffer:
                 # Send file byte to byte
@@ -125,7 +169,7 @@ elif (getorput == 'GET' or getorput == 'get'):
 
             break
 
-    print 'Upload maded!'
+    print 'Upload maded!!'
 
 # Close
 connectionSocket.close()
