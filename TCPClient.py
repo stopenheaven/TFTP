@@ -2,9 +2,12 @@
 import sys
 import os
 import commands
+import libs.structs
 from socket import *
 
 # Default to running on localhost, port 12000
+from libs.structs import total_file
+
 serverName = 'localhost'
 serverPort = 12000
 ARXIU = 'ESPIRAL.txt'
@@ -34,6 +37,7 @@ boolea80 = False
 boolea90 = False
 boolea95 = False
 comprovar = False
+nbloc = 0
 
 # Open the TCP connection to the server at the specified port
 clientSocket.connect((serverName, serverPort))
@@ -42,7 +46,7 @@ option = raw_input('Choose your option, GET or PUT the file: ')
 
 clientSocket.send(option)
 
-if (option == 'put' or option == 'PUT'):
+if option == 'put' or option == 'PUT':
     # choose the file to transfer
     llistat = commands.getoutput('ls -I "*.py"')
     print ''
@@ -113,47 +117,47 @@ if (option == 'put' or option == 'PUT'):
                 clientSocket.send(buffer)
                 buffer = arxiu.read(int(paquet_size))
                 aux = auxiliar * 100 / siz
-                if (aux <= 5 and boolea5 == False):
+                if aux <= 5 and boolea5 == False:
                     boolea5 = True
                     proces = '[=>        5%          ]'
                     print proces
-                elif (aux >= 5 and aux <= 15 and boolea10 == False):
+                elif 5 <= aux <= 15 and boolea10 == False:
                     boolea10 = True
                     proces = '[===>      10%         ]'
                     print proces
-                elif (aux >= 15 and aux <= 25 and boolea20 == False):
+                elif 15 <= aux <= 25 and boolea20 == False:
                     boolea20 = True
                     proces = '[=====>    20%         ]'
                     print proces
-                elif (aux >= 25 and aux <= 35 and boolea30 == False):
+                elif 25 <= aux <= 35 and boolea30 == False:
                     boolea30 = True
                     proces = '[=======>  30%         ]'
                     print proces
-                elif (aux >= 35 and aux <= 45 and boolea40 == False):
+                elif 35 <= aux <= 45 and boolea40 == False:
                     boolea40 = True
                     proces = '[=========>40%         ]'
                     print proces
-                elif (aux >= 45 and aux <= 55 and boolea50 == False):
+                elif 45 <= aux <= 55 and boolea50 == False:
                     proces = '[==========50%         ]'
                     boolea50 = True
                     print proces
-                elif (aux >= 55 and aux <= 65 and boolea60 == False):
+                elif 55 <= aux <= 65 and boolea60 == False:
                     boolea60 = True
                     proces = '[==========60%>        ]'
                     print proces
-                elif (aux >= 65 and aux <= 75 and boolea70 == False):
+                elif 65 <= aux <= 75 and boolea70 == False:
                     boolea70 = True
                     proces = '[==========70%==>      ]'
                     print proces
-                elif (aux >= 75 and aux <= 85 and boolea80 == False):
+                elif 75 <= aux <= 85 and boolea80 == False:
                     boolea80 = True
                     proces = '[==========80%====>    ]'
                     print proces
-                elif (aux >= 85 and aux <= 95 and boolea90 == False):
+                elif 85 <= aux <= 95 and boolea90 == False:
                     boolea90 = True
                     proces = '[==========90%======>  ]'
                     print proces
-                elif (aux > 95 and boolea95 == False):
+                elif aux > 95 and boolea95 == False:
                     boolea95 = True
                     proces = '[==========95%=======> ]'
                     print proces
@@ -165,7 +169,7 @@ if (option == 'put' or option == 'PUT'):
     # Close
     clientSocket.close()
 
-elif (option == 'get' or option == 'GET'):
+elif option == 'get' or option == 'GET':
     # Receive
     llista = clientSocket.recv(2048)
     print ''

@@ -27,6 +27,8 @@ connectionSocket, addr = serverSocket.accept()
 
 getorput = connectionSocket.recv(128)
 
+nbloc = 0
+
 if (getorput == 'PUT' or getorput == 'put'):
     print "Client select:", getorput
     print ''
