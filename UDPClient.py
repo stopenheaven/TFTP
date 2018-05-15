@@ -35,87 +35,121 @@ boolea80 = False
 boolea90 = False
 boolea95 = False
 comprovar = False
-fmt = ''
 nbloc = 0
 
 # Open the TCP connection to the server at the specified port
 clientSocket.connect((serverName, serverPort))
+# clientSocket.settimeout(10)
+
+# Hi to server
+comprova_ack = False
+while comprova_ack == False:
+    hi_packet = struct.pack('HH', 4, nbloc)
+    clientSocket.sendto(hi_packet, (serverName, serverPort))
+    hi_ack, clientAddress = clientSocket.recvfrom(5)
+    ack_hi = struct.unpack('HH', hi_ack)
+    if ack_hi[0] == 4 and ack_hi[1] == nbloc:
+        comprova_ack = True
+
+llistat = commands.getoutput('ls -I "*.py"')
+print 'List Client folder for put: '
+print llistat
+print '\n-------------------------------------\n'
+
+# Receive list server folder
+comprova_ack = False
+list_ack = ''
+list_packet = ''
+while comprova_ack == False:
+    list_packet, clientAddress = clientSocket.recvfrom(512)
+
+    list_ack = struct.unpack('!HH', list_packet[0:4])
+    if list_ack[0] == 3:
+        nbloc = list_ack[1]
+        ack_list = struct.pack('HH', 4, nbloc)
+        clientSocket.sendto(ack_list, (serverName, serverPort))
+        comprova_ack = True
+print 'List Server folder for get:'
+print list_packet[4:]
+print '\n-------------------------------------\n'
 
 option = raw_input('Choose your option, GET or PUT the file to server: ')
-
-clientSocket.sendto(option, (serverName, serverPort))
+getorput = 0
+ARXIU = raw_input('Choose your file: ')
 
 if (option == 'put' or option == 'PUT'):
-    # choose the file to transfer
-    llistat = commands.getoutput('ls -I "*.py"')
-    print ''
-    print llistat
-    print ''
-    ARXIU = raw_input('Choose your file: ')
+    getorput = 1
 
-    print "The file is:", ARXIU
-    print ''
-    # Send name File
-    message = ARXIU
-    clientSocket.sendto(message, (serverName, serverPort))
-    okarxiu, serverAddress = clientSocket.recvfrom(10)
+elif (option == 'get' or option == 'GET'):
+    getorput = 2
+
+else:
+    print 'Error, select put or get'
+    sys.exit()
+
+comprova_ack = False
+while comprova_ack == False:
+    option_packet = struct.pack('!H', getorput)
+    option_packet += ARXIU + '0octet0'
+    clientSocket.sendto(option_packet, (serverName, serverPort))
+    option_ack, clientAddress = clientSocket.recvfrom(4)
+    ack_option = struct.unpack('HH', option_ack)
+    if ack_option[0] == 4:
+        nbloc = ack_option[1]
+        comprova_ack = True
+
+if option == 'put' or option == 'PUT':
+    # choose the file to transfer
+
+    print "The file is:", ARXIU, '\n'
 
     # Choose the paquet size how you want transfer
     while comprovar == False:
         paquet_size = raw_input('Choose the paquet size (8, 16, 32, ... , 1024 bytes): ')
-        if paquet_size == '8':
-            fmt = '8'
-            comprovar = True
-        elif paquet_size == '16':
-            fmt = '16'
-            comprovar = True
-        elif paquet_size == '32':
-            fmt = '32'
-            comprovar = True
-        elif paquet_size == '64':
-            fmt = '64'
-            comprovar = True
-        elif paquet_size == '128':
-            fmt = '128'
-            comprovar = True
-        elif paquet_size == '256':
-            fmt = '256'
-            comprovar = True
-        elif paquet_size == '512':
-            fmt = '512'
-            comprovar = True
-        elif paquet_size == '1024':
-            fmt = '1024'
+        if paquet_size == '8' or paquet_size == '16' or paquet_size == '32' or paquet_size == '64' or paquet_size == '128' or paquet_size == '256' or paquet_size == '512' or paquet_size == '1024':
             comprovar = True
         else:
-            print ("Error: try again")
-            print ''
+            print "Error: try again\n"
 
-    print "The paquet size is", paquet_size, "Bytes"
-    clientSocket.sendto(paquet_size, (serverName, serverPort))
-    print ''
+    comprova_ack = False
+    while comprova_ack == False:
+        option_packet = struct.pack('!HH', 3, nbloc)
+        option_packet += paquet_size
+        clientSocket.sendto(option_packet, (serverName, serverPort))
+        option_ack, clientAddress = clientSocket.recvfrom(4)
+        ack_option = struct.unpack('HH', option_ack)
+        print ack_option[0]
+        if ack_option[0] == 4:
+            nbloc = ack_option[1]
+            comprova_ack = True
 
-    print 'Start upload to server'
-    print ''
-
-    # Wait server answer
-    modifiedMessage, serverAddress = clientSocket.recvfrom(512)
-    if modifiedMessage != 'Perfecte':
-        print "error en enviament de nom ARXIU"
-        clientSocket.close()
+    print "The paquet size is", paquet_size, "Bytes\n"
+    print 'Start upload to server\n'
 
     while True:
         # Obrim el fitxer en mode lectura binaria i llegim el su contingut
         with open(ARXIU, "rb") as arxiu_size:
             size = arxiu_size.read()
-        # Send how many byte of file
-        clientSocket.sendto(str(len(size)), (serverName, serverPort))
-
         siz = len(size)
+        # Send how many byte of file
+        size_packet = ''
+        comprova_ack = False
+        while comprova_ack == False:
+            size_packet = struct.pack('!HH', 3, nbloc)
+            size_packet += str(siz)
+            clientSocket.sendto(size_packet, (serverName, serverPort))
+            size_ack, clientAddress = clientSocket.recvfrom(4)
+            ack_size = struct.unpack('HH', size_ack)
+            print ack_size[0]
+            if ack_size[0] == 4:
+                comprova_ack = True
+        clientSocket.sendto(size_packet, (serverName, serverPort))
 
         arxiu = open(ARXIU, 'rb')
         buffer = arxiu.read(int(paquet_size))
         buffer_size = len(buffer)
+        print buffer_size
+        print siz
 
         # Wait server answer
         rebut, serverAddress = clientSocket.recvfrom(10)
@@ -184,11 +218,7 @@ if (option == 'put' or option == 'PUT'):
     clientSocket.close()
 
 elif (option == 'get' or option == 'GET'):
-    # Receive
-    llista, clientAddress = clientSocket.recvfrom(2048)
-    print ''
-    print llista
-    print ''
+
     ARXIU = raw_input('Choose your file: ')
 
     # Send name File
@@ -199,29 +229,7 @@ elif (option == 'get' or option == 'GET'):
     # Choose the paquet size how you want transfer
     while comprovar == False:
         paquet_size = raw_input('Choose the paquet size (8, 16, 32, ... , 1024 bytes): ')
-        if paquet_size == '8':
-            fmt = '8'
-            comprovar = True
-        elif paquet_size == '16':
-            fmt = '16'
-            comprovar = True
-        elif paquet_size == '32':
-            fmt = '32'
-            comprovar = True
-        elif paquet_size == '64':
-            fmt = '64'
-            comprovar = True
-        elif paquet_size == '128':
-            fmt = '128'
-            comprovar = True
-        elif paquet_size == '256':
-            fmt = '256'
-            comprovar = True
-        elif paquet_size == '512':
-            fmt = '512'
-            comprovar = True
-        elif paquet_size == '1024':
-            fmt = '1024'
+        if paquet_size == '8' or paquet_size == '16' or paquet_size == '32' or paquet_size == '64' or paquet_size == '128' or paquet_size == '256' or paquet_size == '512' or paquet_size == '1024':
             comprovar = True
         else:
             print ("Error: try again")

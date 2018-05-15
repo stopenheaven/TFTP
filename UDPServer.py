@@ -7,7 +7,6 @@ import struct
 
 # Default to listening on port 12000
 serverPort = 12000
-fmt = ''
 nbloc = 0
 
 # Optional server port number
@@ -16,6 +15,7 @@ if (len(sys.argv) > 1):
 
 # Setup IPv4 UDP socket
 serverSocket = socket(AF_INET, SOCK_DGRAM)
+# serverSocket.settimeout(10)
 
 # Specify the welcoming port of the server
 serverSocket.bind(('', serverPort))
@@ -24,49 +24,82 @@ os.system("ifconfig | grep -w inet")
 
 print "The server is ready to receive"
 
-getorput, clientAddress = serverSocket.recvfrom(512)
+# Hi from client
+comprova_ack = False
+while comprova_ack == False:
+    hi_packet, clientAddress = serverSocket.recvfrom(5)
+    hi_ack = struct.unpack('HH', hi_packet)
+    if hi_ack[0] == 4:
+        nbloc = hi_ack[1]
+        ack_hi = struct.pack('HH', 4, nbloc)
+        serverSocket.sendto(ack_hi, clientAddress)
+        comprova_ack = True
 
-if (getorput == 'PUT' or getorput == 'put'):
-    print "Client select:", getorput
-    print ''
+# Send list Server folder
+llistat = commands.getoutput('ls -I "*.py"')
+comprova_ack = False
+while comprova_ack == False:
+    list_packet = struct.pack('!HH', 3, nbloc)
+    list_packet += llistat
 
-    # Receive the file and confirm this
-    ARXIU, clientAddress = serverSocket.recvfrom(512)
-    print "File:", ARXIU
-    print ''
-    okarxiu = 'ok_arxiu'
-    serverSocket.sendto(okarxiu, clientAddress)
+    serverSocket.sendto(list_packet, clientAddress)
+    list_ack, clientAddress = serverSocket.recvfrom(5)
+    ack_list = struct.unpack('HH', list_ack)
+    if ack_list[0] == 4 and ack_list[1] == nbloc:
+        comprova_ack = True
 
-    mida_paq, clientAddress = serverSocket.recvfrom(512)
+getorput = ''
+ARXIU = ''
+nbloc += 1
+# Recieve decision get or put
+comprova_ack = False
+while comprova_ack == False:
+    option_packet, clientAddress = serverSocket.recvfrom(46)
+    option_ack = struct.unpack('!H', option_packet[0:2])
+    getorput = option_ack[0]
+
+    ARXIU = option_packet[2:-7]
+    if option_ack[0] == 1 or option_ack[0] == 2:
+        ack_option = struct.pack('HH', 4, nbloc)
+        serverSocket.sendto(ack_option, clientAddress)
+        comprova_ack = True
+
+if (getorput == 1):
+    print "Client select: PUT\n"
+
+    print "File:", ARXIU, '\n'
+
+    # Recieve packet size
+    comprova_ack = False
+    while comprova_ack == False:
+        mida_packet, clientAddress = serverSocket.recvfrom(46)
+        mida_ack = struct.unpack('!HH', mida_packet[0:4])
+        mida_paq = mida_packet[4:]
+        nbloc = mida_ack[1]
+
+        if mida_ack[0] == 3:
+            ack_paq = struct.pack('HH', 4, nbloc)
+            serverSocket.sendto(ack_paq, clientAddress)
+            comprova_ack = True
+
     print 'Paquet size:', mida_paq
     print ''
 
-    if mida_paq == '8':
-        fmt = '8'
-    elif mida_paq == '16':
-        fmt = '16'
-    elif mida_paq == '32':
-        fmt = '32'
-    elif mida_paq == '64':
-        fmt = '64'
-    elif mida_paq == '128':
-        fmt = '128'
-    elif mida_paq == '256':
-        fmt = '256'
-    elif mida_paq == '512':
-        fmt = '512'
-    elif mida_paq == '1024':
-        fmt = '1024'
-
-    message = 'Perfecte'
-    serverSocket.sendto(message, clientAddress)
-
     while True:
         # Rebem la longitud que envia el client
-        rebut, clientAddress = serverSocket.recvfrom(2048)
+        comprova_ack = False
+        while comprova_ack == False:
+            size_packet, clientAddress = serverSocket.recvfrom(46)
+            size_ack = struct.unpack('!HH', size_packet[0:4])
+            rebut = size_packet[4:]
+            nbloc = size_ack[1]
+
+            if size_ack[0] == 3:
+                ack_size = struct.pack('HH', 4, nbloc)
+                serverSocket.sendto(ack_size, clientAddress)
+                comprova_ack = True
         if rebut:
-            print "File size:", rebut
-            print ''
+            print "File size:", rebut, 'Bytes\n'
         # Verifiquem que el que rebem sigui un numero, en cas que
         # sigui aixi enviem OK al client indicant que estem llestos
         # per rebre l'arxiu
@@ -93,6 +126,7 @@ if (getorput == 'PUT' or getorput == 'put'):
                     buffer += len(data_packet)
 
                 buffer -= 4
+                print buffer
 
                 if buffer == int(rebut):
                     print "File downloaded successfully"
@@ -100,16 +134,10 @@ if (getorput == 'PUT' or getorput == 'put'):
                     print "An error/incomplete file has happened"
             break
 
-elif (getorput == 'GET' or getorput == 'get'):
-    print "Client select:", getorput
-    print ''
+elif (getorput == 2):
+    print "Client select: PUT\n"
 
-    llistat = commands.getoutput('ls -I "*.py"')
-    serverSocket.sendto(llistat, clientAddress)
-
-    # Receive the file and confirm this
-    ARXIU, clientAddress = serverSocket.recvfrom(512)
-    print "ARXIU:", ARXIU
+    print "File:", ARXIU, '\n'
     okarxiu = 'ok_arxiu'
     serverSocket.sendto(okarxiu, clientAddress)
 
