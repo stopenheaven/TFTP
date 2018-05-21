@@ -103,8 +103,6 @@ while comprova_ack == False:
 
 nbloc += 1
 if option == 'put' or option == 'PUT':
-    # choose the file to transfer
-
     print "The file is:", ARXIU, '\n'
 
     # Choose the paquet size how you want transfer
@@ -220,7 +218,6 @@ if option == 'put' or option == 'PUT':
                 print proces
 
         break
-    auxiliar -= int(paquet_size)
     proces = '[==========100%========]'
     print proces
 
@@ -228,13 +225,7 @@ if option == 'put' or option == 'PUT':
     clientSocket.close()
 
 elif (option == 'get' or option == 'GET'):
-
-    ARXIU = raw_input('Choose your file: ')
-
-    # Send name File
-    sentence = ARXIU
-    clientSocket.sendto(sentence, clientAddress)
-    okarxiu, serverAddress = clientSocket.recvfrom(10)
+    print "The file is:", ARXIU, '\n'
 
     # Choose the paquet size how you want transfer
     while comprovar == False:
@@ -242,55 +233,77 @@ elif (option == 'get' or option == 'GET'):
         if paquet_size == '8' or paquet_size == '16' or paquet_size == '32' or paquet_size == '64' or paquet_size == '128' or paquet_size == '256' or paquet_size == '512' or paquet_size == '1024':
             comprovar = True
         else:
-            print ("Error: try again")
-            print ''
+            print "Error: try again\n"
+    nbloc += 1
 
-    print "The paquet size is", paquet_size, "Bytes"
-    clientSocket.sendto(paquet_size, (serverName, serverPort))
-    print ''
+    comprova_ack = False
+    while comprova_ack == False:
+        option_packet = struct.pack('!HH', 3, nbloc)
+        option_packet += paquet_size
+        clientSocket.sendto(option_packet, (serverName, serverPort))
+        option_ack, clientAddress = clientSocket.recvfrom(4)
+        ack_option = struct.unpack('HH', option_ack)
+        if ack_option[0] == 4:
+            nbloc = ack_option[1]
+            comprova_ack = True
 
-    # Wait server answer
-    modifiedSentence, clientAddress = clientSocket.recvfrom(512)
-    if modifiedSentence != 'Perfecte':
-        print "error en enviament de nom ARXIU"
-        clientSocket.close()
+    nbloc += 1
+    print "The paquet size is", paquet_size, "Bytes\n"
+    print 'Start download to server\n'
 
     while True:
-        # Receive the size of file
-        rebut, clientAddress = clientSocket.recvfrom(1024)
+        # Rebem la longitud que envia el client
+        comprova_ack = False
+        while comprova_ack == False:
+            print 'entro bucle longitud'
+            size_packet, clientAddress = clientSocket.recvfrom(46)
+            size_ack = struct.unpack('!HH', size_packet[0:4])
+            rebut = size_packet[4:]
+            nbloc = size_ack[1]
+            if size_ack[0] == 3:
+                ack_size = struct.pack('HH', 4, nbloc)
+                clientSocket.sendto(ack_size, (serverName, serverPort))
+                comprova_ack = True
         if rebut:
-            print "File size:", rebut, 'Bytes'
-            print 'Start download from server'
-            print ''
+            print "File size:", rebut, 'Bytes\n'
         # Verifiquem que el que rebem sigui un numero, en cas que
         # sigui aixi enviem OK al client indicant que estem llestos
         # per rebre l'arxiu
-        if rebut.isdigit():
-            clientSocket.sendto("OK", clientAddress)
 
-            # Inicialitzem el contador que guarda la quantitat de
-            # bytes rebuts
+        if rebut.isdigit():
+            # Inicialitzem el contador que guarda la quantitat de bytes rebuts
             buffer = 0
+
             # Obrim l'arxiu en mode escriptura
             with open("arxiu", "wb") as arxiu:
                 # Ens preparem per rebre l'arxiu amb longitud
                 # especifica
-                mida = int(rebut)
+                while (buffer < int(rebut)):
 
-                while (buffer < mida):
-                    data_packet, clientAddress = clientSocket.recvfrom(int(paquet_size) + 4)
+                    data_packet, clientAddress = clientSocket.recvfrom(int(paquet_size)+4)
 
-                    data = struct.unpack('HH' + str(len(data_packet) - 4) + 's', data_packet)
+                    data = struct.unpack('HH'+str(len(data_packet)-4)+'s', data_packet)
 
                     if not len(data[2]):
                         # Si no rebem dades sortim del bucle
                         break
-                    # Escrivim cada byte en l'arxiu i augmentem el buffer
 
-                    arxiu.write(data[2])
-                    buffer += len(data_packet)-4
+                    if nbloc+1 > 65535:
+                        nbloc = -1
 
-                    aux = auxiliar * 100 / mida
+                    if nbloc+1 == data[1]:
+                        nbloc = data[1]
+                        ack_buffer = struct.pack('HH', 4, nbloc)
+                        clientSocket.sendto(ack_buffer, (serverName, serverPort))
+                        # Escrivim cada byte en l'arxiu i augmentem el buffer
+                        arxiu.write(data[2])
+                        buffer += len(data_packet)-4
+
+                    else:
+                        ack_buffer = struct.pack('HH', 5, nbloc)
+                        clientSocket.sendto(ack_buffer, (serverName, serverPort))
+
+
                     if (aux <= 5 and boolea5 == False):
                         boolea5 = True
                         proces = '[=>        5%          ]'
@@ -335,7 +348,6 @@ elif (option == 'get' or option == 'GET'):
                         boolea95 = True
                         proces = '[==========95%=======> ]'
                         print proces
-                    auxiliar += int(paquet_size)
 
                 proces = '[==========100%========]'
                 print proces

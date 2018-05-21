@@ -48,6 +48,7 @@ while comprova_ack == False:
     if ack_list[0] == 4 and ack_list[1] == nbloc:
         comprova_ack = True
 
+auxiliar=0
 getorput = ''
 ARXIU = ''
 nbloc += 1
@@ -146,46 +147,68 @@ if (getorput == 1):
 elif (getorput == 2):
     print "Client select: GET\n"
 
+    print "The file is:", ARXIU, '\n'
+
     print "File:", ARXIU, '\n'
-    okarxiu = 'ok_arxiu'
-    serverSocket.sendto(okarxiu, clientAddress)
 
-    mida_paq, clientAddress = serverSocket.recvfrom(512)
-    print 'Paquet size:', mida_paq, 'Bytes'
-    print ''
+    # Recieve packet size
+    comprova_ack = False
+    while comprova_ack == False:
+        mida_packet, clientAddress = serverSocket.recvfrom(46)
+        mida_ack = struct.unpack('!HH', mida_packet[0:4])
+        mida_paq = mida_packet[4:]
+        nbloc = mida_ack[1]
 
-    sentence = 'Perfecte'
-    serverSocket.sendto(sentence, clientAddress)
+        if mida_ack[0] == 3:
+            ack_paq = struct.pack('HH', 4, nbloc)
+            serverSocket.sendto(ack_paq, clientAddress)
+            comprova_ack = True
 
-    # Obrim el fitxer en mode lectura binaria i llegim el su contingut
-    with open(ARXIU, "rb") as arxiu:
-        buffer = arxiu.read()
+    print 'Paquet size:', mida_paq, '\n'
 
     while True:
+        # Obrim el fitxer en mode lectura binaria i llegim el su contingut
         with open(ARXIU, "rb") as arxiu_size:
             size = arxiu_size.read()
-        # Send how many byte of file
-        serverSocket.sendto(str(len(size)), clientAddress)
-
         siz = len(size)
+        # Send how many byte of file
+        size_packet = ''
+
+        comprova_ack = False
+        while comprova_ack == False:
+            size_packet = struct.pack('!HH', 3, nbloc)
+            size_packet += str(siz)
+            serverSocket.sendto(size_packet, clientAddress)
+            size_ack, clientAddress = serverSocket.recvfrom(4)
+            ack_size = struct.unpack('HH', size_ack)
+            if ack_size[0] == 4:
+                comprova_ack = True
+        nbloc += 1
 
         arxiu = open(ARXIU, 'rb')
         buffer = arxiu.read(int(mida_paq))
+        buffer_size = len(buffer)
 
-        # Wait server answer
-        rebut, clientAddress = serverSocket.recvfrom(10)
-        if rebut == "OK":
-            # If is ok send file
-            while buffer:
-                # Send file byte to byte
-                buffer_packet = struct.pack('HH' + str(mida_paq) + 's', 3, nbloc, buffer)
+        print 'File size: ', siz , '\n'
 
-                serverSocket.sendto(buffer_packet, clientAddress)
+        # If is ok send file
+        while auxiliar < siz:
+            # Send file byte to byte
+            if nbloc > 65535:
+                nbloc = 0
 
+            buffer_packet = struct.pack('HH'+str(buffer_size)+'s', 3, nbloc, buffer)
+            serverSocket.sendto(buffer_packet, clientAddress)
+
+            buffer_ack, clientAddress = serverSocket.recvfrom(4)
+            ack_buffer = struct.unpack('HH', buffer_ack)
+
+            if ack_buffer[0] == 4:
                 buffer = arxiu.read(int(mida_paq))
+                buffer_size = len(buffer)
+                aux = auxiliar * 100 / siz
+                auxiliar += int(mida_paq)
                 nbloc += 1
-
-            break
 
     print 'Upload maded!'
 
