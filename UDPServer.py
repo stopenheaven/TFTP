@@ -103,16 +103,17 @@ if (getorput == 1):
         # Verifiquem que el que rebem sigui un numero, en cas que
         # sigui aixi enviem OK al client indicant que estem llestos
         # per rebre l'arxiu
-        if rebut.isdigit():
-            serverSocket.sendto('OK', clientAddress)
 
+        if rebut.isdigit():
             # Inicialitzem el contador que guarda la quantitat de bytes rebuts
             buffer = 0
+
             # Obrim l'arxiu en mode escriptura
             with open("arxiu", "wb") as arxiu:
                 # Ens preparem per rebre l'arxiu amb longitud
                 # especifica
                 while (buffer < int(rebut)):
+
                     data_packet, clientAddress = serverSocket.recvfrom(int(mida_paq)+4)
 
                     data = struct.unpack('HH'+str(len(data_packet)-4)+'s', data_packet)
@@ -120,13 +121,21 @@ if (getorput == 1):
                     if not len(data[2]):
                         # Si no rebem dades sortim del bucle
                         break
-                    # Escrivim cada byte en l'arxiu i augmentem el buffer
 
-                    arxiu.write(data[2])
-                    buffer += len(data_packet)
+                    if nbloc+1 > 65535:
+                        nbloc = -1
 
-                buffer -= 4
-                print buffer
+                    if nbloc+1 == data[1]:
+                        nbloc = data[1]
+                        ack_buffer = struct.pack('HH', 4, nbloc)
+                        serverSocket.sendto(ack_buffer, clientAddress)
+                        # Escrivim cada byte en l'arxiu i augmentem el buffer
+                        arxiu.write(data[2])
+                        buffer += len(data_packet)-4
+
+                    else:
+                        ack_buffer = struct.pack('HH', 5, nbloc)
+                        serverSocket.sendto(ack_buffer, clientAddress)
 
                 if buffer == int(rebut):
                     print "File downloaded successfully"
@@ -135,7 +144,7 @@ if (getorput == 1):
             break
 
 elif (getorput == 2):
-    print "Client select: PUT\n"
+    print "Client select: GET\n"
 
     print "File:", ARXIU, '\n'
     okarxiu = 'ok_arxiu'
@@ -181,4 +190,4 @@ elif (getorput == 2):
     print 'Upload maded!'
 
     # Close
-    serverSocket.close()
+serverSocket.close()

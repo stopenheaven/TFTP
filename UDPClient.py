@@ -36,6 +36,7 @@ boolea90 = False
 boolea95 = False
 comprovar = False
 nbloc = 0
+aux = 0
 
 # Open the TCP connection to the server at the specified port
 clientSocket.connect((serverName, serverPort))
@@ -51,10 +52,11 @@ while comprova_ack == False:
     if ack_hi[0] == 4 and ack_hi[1] == nbloc:
         comprova_ack = True
 
+nbloc += 1
 llistat = commands.getoutput('ls -I "*.py"')
-print 'List Client folder for put: '
+print '\nList Client folder for PUT: '
 print llistat
-print '\n-------------------------------------\n'
+print '-------------------------------------\n'
 
 # Receive list server folder
 comprova_ack = False
@@ -69,9 +71,10 @@ while comprova_ack == False:
         ack_list = struct.pack('HH', 4, nbloc)
         clientSocket.sendto(ack_list, (serverName, serverPort))
         comprova_ack = True
-print 'List Server folder for get:'
+nbloc += 1
+print 'List Server folder for GET:'
 print list_packet[4:]
-print '\n-------------------------------------\n'
+print '-------------------------------------\n'
 
 option = raw_input('Choose your option, GET or PUT the file to server: ')
 getorput = 0
@@ -98,6 +101,7 @@ while comprova_ack == False:
         nbloc = ack_option[1]
         comprova_ack = True
 
+nbloc += 1
 if option == 'put' or option == 'PUT':
     # choose the file to transfer
 
@@ -110,6 +114,7 @@ if option == 'put' or option == 'PUT':
             comprovar = True
         else:
             print "Error: try again\n"
+    nbloc += 1
 
     comprova_ack = False
     while comprova_ack == False:
@@ -118,11 +123,11 @@ if option == 'put' or option == 'PUT':
         clientSocket.sendto(option_packet, (serverName, serverPort))
         option_ack, clientAddress = clientSocket.recvfrom(4)
         ack_option = struct.unpack('HH', option_ack)
-        print ack_option[0]
         if ack_option[0] == 4:
             nbloc = ack_option[1]
             comprova_ack = True
 
+    nbloc += 1
     print "The paquet size is", paquet_size, "Bytes\n"
     print 'Start upload to server\n'
 
@@ -133,6 +138,7 @@ if option == 'put' or option == 'PUT':
         siz = len(size)
         # Send how many byte of file
         size_packet = ''
+
         comprova_ack = False
         while comprova_ack == False:
             size_packet = struct.pack('!HH', 3, nbloc)
@@ -140,77 +146,81 @@ if option == 'put' or option == 'PUT':
             clientSocket.sendto(size_packet, (serverName, serverPort))
             size_ack, clientAddress = clientSocket.recvfrom(4)
             ack_size = struct.unpack('HH', size_ack)
-            print ack_size[0]
             if ack_size[0] == 4:
                 comprova_ack = True
-        clientSocket.sendto(size_packet, (serverName, serverPort))
+        nbloc += 1
 
         arxiu = open(ARXIU, 'rb')
         buffer = arxiu.read(int(paquet_size))
         buffer_size = len(buffer)
-        print buffer_size
-        print siz
 
-        # Wait server answer
-        rebut, serverAddress = clientSocket.recvfrom(10)
-        if rebut == "OK":
-            # If is ok send file
-            while buffer:
-                # Send file byte to byte
+        print 'File size: ', siz , '\n'
 
-                buffer_packet = struct.pack('HH'+str(buffer_size)+'s', 3, nbloc, buffer)
+        # If is ok send file
+        while auxiliar < siz:
+            # Send file byte to byte
+            if nbloc > 65535:
+                nbloc = 0
+            buffer_packet = struct.pack('HH'+str(buffer_size)+'s', 3, nbloc, buffer)
+            clientSocket.sendto(buffer_packet, (serverName, serverPort))
 
-                clientSocket.sendto(buffer_packet, (serverName, serverPort))
+            buffer_ack, clientAddress = clientSocket.recvfrom(4)
+            ack_buffer = struct.unpack('HH', buffer_ack)
+
+            if ack_buffer[0] == 4:
                 buffer = arxiu.read(int(paquet_size))
                 buffer_size = len(buffer)
                 aux = auxiliar * 100 / siz
-                if (aux <= 5 and boolea5 == False):
-                    boolea5 = True
-                    proces = '[=>        5%          ]'
-                    print proces
-                elif (aux >= 5 and aux <= 15 and boolea10 == False):
-                    boolea10 = True
-                    proces = '[===>      10%         ]'
-                    print proces
-                elif (aux >= 15 and aux <= 25 and boolea20 == False):
-                    boolea20 = True
-                    proces = '[=====>    20%         ]'
-                    print proces
-                elif (aux >= 25 and aux <= 35 and boolea30 == False):
-                    boolea30 = True
-                    proces = '[=======>  30%         ]'
-                    print proces
-                elif (aux >= 35 and aux <= 45 and boolea40 == False):
-                    boolea40 = True
-                    proces = '[=========>40%         ]'
-                    print proces
-                elif (aux >= 45 and aux <= 55 and boolea50 == False):
-                    proces = '[==========50%         ]'
-                    boolea50 = True
-                    print proces
-                elif (aux >= 55 and aux <= 65 and boolea60 == False):
-                    boolea60 = True
-                    proces = '[==========60%>        ]'
-                    print proces
-                elif (aux >= 65 and aux <= 75 and boolea70 == False):
-                    boolea70 = True
-                    proces = '[==========70%==>      ]'
-                    print proces
-                elif (aux >= 75 and aux <= 85 and boolea80 == False):
-                    boolea80 = True
-                    proces = '[==========80%====>    ]'
-                    print proces
-                elif (aux >= 85 and aux <= 95 and boolea90 == False):
-                    boolea90 = True
-                    proces = '[==========90%======>  ]'
-                    print proces
-                elif (aux > 95 and boolea95 == False):
-                    boolea95 = True
-                    proces = '[==========95%=======> ]'
-                    print proces
                 auxiliar += int(paquet_size)
                 nbloc += 1
-            break
+
+            if (aux <= 5 and boolea5 == False):
+                boolea5 = True
+                proces = '[=>        5%          ]'
+                print proces
+            elif (aux >= 5 and aux <= 15 and boolea10 == False):
+                boolea10 = True
+                proces = '[===>      10%         ]'
+                print proces
+            elif (aux >= 15 and aux <= 25 and boolea20 == False):
+                boolea20 = True
+                proces = '[=====>    20%         ]'
+                print proces
+            elif (aux >= 25 and aux <= 35 and boolea30 == False):
+                boolea30 = True
+                proces = '[=======>  30%         ]'
+                print proces
+            elif (aux >= 35 and aux <= 45 and boolea40 == False):
+                boolea40 = True
+                proces = '[=========>40%         ]'
+                print proces
+            elif (aux >= 45 and aux <= 55 and boolea50 == False):
+                proces = '[==========50%         ]'
+                boolea50 = True
+                print proces
+            elif (aux >= 55 and aux <= 65 and boolea60 == False):
+                boolea60 = True
+                proces = '[==========60%>        ]'
+                print proces
+            elif (aux >= 65 and aux <= 75 and boolea70 == False):
+                boolea70 = True
+                proces = '[==========70%==>      ]'
+                print proces
+            elif (aux >= 75 and aux <= 85 and boolea80 == False):
+                boolea80 = True
+                proces = '[==========80%====>    ]'
+                print proces
+            elif (aux >= 85 and aux <= 95 and boolea90 == False):
+                boolea90 = True
+                proces = '[==========90%======>  ]'
+                print proces
+            elif (aux > 95 and boolea95 == False):
+                boolea95 = True
+                proces = '[==========95%=======> ]'
+                print proces
+
+        break
+    auxiliar -= int(paquet_size)
     proces = '[==========100%========]'
     print proces
 
