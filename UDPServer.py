@@ -83,8 +83,7 @@ if (getorput == 1):
             serverSocket.sendto(ack_paq, clientAddress)
             comprova_ack = True
 
-    print 'Paquet size:', mida_paq
-    print ''
+    print 'Paquet size:', mida_paq, '\n'
 
     while True:
         # Rebem la longitud que envia el client
@@ -147,8 +146,6 @@ if (getorput == 1):
 elif (getorput == 2):
     print "Client select: GET\n"
 
-    print "The file is:", ARXIU, '\n'
-
     print "File:", ARXIU, '\n'
 
     # Recieve packet size
@@ -189,15 +186,14 @@ elif (getorput == 2):
         buffer = arxiu.read(int(mida_paq))
         buffer_size = len(buffer)
 
-        print 'File size: ', siz , '\n'
+        print 'File size: ', siz, '\n'
 
         # If is ok send file
         while auxiliar < siz:
             # Send file byte to byte
             if nbloc > 65535:
                 nbloc = 0
-
-            buffer_packet = struct.pack('HH'+str(buffer_size)+'s', 3, nbloc, buffer)
+            buffer_packet = struct.pack('HH' + str(buffer_size) + 's', 3, nbloc, buffer)
             serverSocket.sendto(buffer_packet, clientAddress)
 
             buffer_ack, clientAddress = serverSocket.recvfrom(4)
@@ -209,8 +205,7 @@ elif (getorput == 2):
                 aux = auxiliar * 100 / siz
                 auxiliar += int(mida_paq)
                 nbloc += 1
-
-    print 'Upload maded!'
-
+        break
+    print 'Upload maded'
     # Close
 serverSocket.close()
