@@ -4,6 +4,7 @@ import os
 import commands
 from socket import *
 import struct
+import signal
 
 # Default to listening on port 12000
 serverPort = 12000
@@ -15,7 +16,16 @@ if (len(sys.argv) > 1):
 
 # Setup IPv4 UDP socket
 serverSocket = socket(AF_INET, SOCK_DGRAM)
-# serverSocket.settimeout(10)
+
+# Function for timeout
+def handler(signum, frame):
+    print '\n \n \n '
+    print '------------------------------------- \n'
+    print 'Error de timeout \n'
+    print '-------------------------------------\n'
+
+    serverSocket.close()
+    exit()
 
 # Specify the welcoming port of the server
 serverSocket.bind(('', serverPort))
@@ -48,10 +58,12 @@ while comprova_ack == False:
     if ack_list[0] == 4 and ack_list[1] == nbloc:
         comprova_ack = True
 
+# Inicialitzacions
 auxiliar=0
 getorput = ''
 ARXIU = ''
 nbloc += 1
+
 # Recieve decision get or put
 comprova_ack = False
 while comprova_ack == False:
@@ -86,7 +98,7 @@ if (getorput == 1):
     print 'Paquet size:', mida_paq, '\n'
 
     while True:
-        # Rebem la longitud que envia el client
+        # Recieve file size
         comprova_ack = False
         while comprova_ack == False:
             size_packet, clientAddress = serverSocket.recvfrom(46)
@@ -117,6 +129,10 @@ if (getorput == 1):
                     data_packet, clientAddress = serverSocket.recvfrom(int(mida_paq)+4)
 
                     data = struct.unpack('HH'+str(len(data_packet)-4)+'s', data_packet)
+
+                    # Set the signal handler and a 5-second alarm
+                    signal.signal(signal.SIGALRM, handler)
+                    signal.alarm(30)
 
                     if not len(data[2]):
                         # Si no rebem dades sortim del bucle
@@ -171,6 +187,7 @@ elif (getorput == 2):
         # Send how many byte of file
         size_packet = ''
 
+        # Send file size
         comprova_ack = False
         while comprova_ack == False:
             size_packet = struct.pack('!HH', 3, nbloc)
@@ -195,6 +212,10 @@ elif (getorput == 2):
                 nbloc = 0
             buffer_packet = struct.pack('HH' + str(buffer_size) + 's', 3, nbloc, buffer)
             serverSocket.sendto(buffer_packet, clientAddress)
+
+            # Set the signal handler and a 5-second alarm
+            signal.signal(signal.SIGALRM, handler)
+            signal.alarm(30)
 
             buffer_ack, clientAddress = serverSocket.recvfrom(4)
             ack_buffer = struct.unpack('HH', buffer_ack)

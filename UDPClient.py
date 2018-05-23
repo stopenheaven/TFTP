@@ -3,6 +3,7 @@ import sys
 import commands
 import os
 from socket import *
+import signal
 import struct
 
 # Default to running on localhost, port 12000
@@ -21,6 +22,17 @@ if (len(sys.argv) > 2):
 # Request IPv4 and UDP communication
 clientSocket = socket(AF_INET, SOCK_DGRAM)
 
+# Function for timeout
+def handler(signum, frame):
+    print '\n \n \n '
+    print '------------------------------------- \n'
+    print 'Error de timeout \n'
+    print '-------------------------------------\n'
+
+    clientSocket.close()
+    exit()
+
+# Inicialitzacions
 proces = ''
 auxiliar = 0
 boolea5 = False
@@ -37,10 +49,10 @@ boolea95 = False
 comprovar = False
 nbloc = 0
 aux = 0
+getorput = 0
 
 # Open the TCP connection to the server at the specified port
 clientSocket.connect((serverName, serverPort))
-# clientSocket.settimeout(10)
 
 # Hi to server
 comprova_ack = False
@@ -53,6 +65,8 @@ while comprova_ack == False:
         comprova_ack = True
 
 nbloc += 1
+
+# Capture the files on client
 llistat = commands.getoutput('ls -I "*.py"')
 print '\nList Client folder for PUT: '
 print llistat
@@ -76,8 +90,10 @@ print 'List Server folder for GET:'
 print list_packet[4:]
 print '-------------------------------------\n'
 
+# Choose GET or OUT
 option = raw_input('Choose your option, GET or PUT the file to server: ')
-getorput = 0
+
+# Choose file name
 ARXIU = raw_input('Choose your file: ')
 
 # RRQ -> solicitud lectura (PUT) codi = 1
@@ -93,6 +109,7 @@ else:
     print 'Error, select put or get'
     sys.exit()
 
+# Send WRQ or RRQ packet
 comprova_ack = False
 while comprova_ack == False:
     option_packet = struct.pack('!H', getorput)
@@ -115,6 +132,7 @@ if option == 'put' or option == 'PUT':
             print "Error: try again\n"
     nbloc += 1
 
+    # Send size packet
     comprova_ack = False
     while comprova_ack == False:
         option_packet = struct.pack('!HH', 3, nbloc)
@@ -138,6 +156,7 @@ if option == 'put' or option == 'PUT':
         # Send how many byte of file
         size_packet = ''
 
+        # Send file size packet
         comprova_ack = False
         while comprova_ack == False:
             size_packet = struct.pack('!HH', 3, nbloc)
@@ -153,19 +172,24 @@ if option == 'put' or option == 'PUT':
         buffer = arxiu.read(int(paquet_size))
         buffer_size = len(buffer)
 
-        print 'File size: ', siz , '\n'
+        print 'File size: ', siz, '\n'
 
-        # If is ok send file
+        # Send file
         while auxiliar < siz:
-            # Send file byte to byte
+            # If nbloc > 65535 nbloc start to 0
             if nbloc > 65535:
                 nbloc = 0
-            buffer_packet = struct.pack('HH'+str(buffer_size)+'s', 3, nbloc, buffer)
+            buffer_packet = struct.pack('HH' + str(buffer_size) + 's', 3, nbloc, buffer)
             clientSocket.sendto(buffer_packet, (serverName, serverPort))
+
+            # Set the signal handler and a 5-second alarm
+            signal.signal(signal.SIGALRM, handler)
+            signal.alarm(30)
 
             buffer_ack, clientAddress = clientSocket.recvfrom(4)
             ack_buffer = struct.unpack('HH', buffer_ack)
 
+            # Confirm
             if ack_buffer[0] == 4:
                 buffer = arxiu.read(int(paquet_size))
                 buffer_size = len(buffer)
@@ -173,6 +197,7 @@ if option == 'put' or option == 'PUT':
                 auxiliar += int(paquet_size)
                 nbloc += 1
 
+            # View %
             if (aux <= 5 and boolea5 == False):
                 boolea5 = True
                 proces = '[=>        5%          ]'
@@ -222,10 +247,7 @@ if option == 'put' or option == 'PUT':
     proces = '[==========100%========]'
     print proces
 
-    # Close
-    clientSocket.close()
-
-elif (option == 'get' or option == 'GET'):
+elif option == 'get' or option == 'GET':
 
     # Choose the paquet size how you want transfer
     while comprovar == False:
@@ -236,6 +258,7 @@ elif (option == 'get' or option == 'GET'):
             print "Error: try again\n"
     nbloc += 1
 
+    # Send packet size
     comprova_ack = False
     while comprova_ack == False:
         option_packet = struct.pack('!HH', 3, nbloc)
@@ -252,17 +275,16 @@ elif (option == 'get' or option == 'GET'):
     print 'Start upload to server\n'
 
     while True:
-        # Rebem la longitud que envia el server
+        # Recieve file size packet
         comprova_ack = False
         while comprova_ack == False:
             size_packet, clientAddress = clientSocket.recvfrom(46)
             size_ack = struct.unpack('!HH', size_packet[0:4])
             rebut = size_packet[4:]
             nbloc = size_ack[1]
-
             if size_ack[0] == 3:
                 ack_size = struct.pack('HH', 4, nbloc)
-                clientSocket.sendto(ack_size, (serverName,serverPort))
+                clientSocket.sendto(ack_size, (serverName, serverPort))
                 comprova_ack = True
         if rebut:
             print "File size:", rebut, 'Bytes\n'
@@ -280,24 +302,28 @@ elif (option == 'get' or option == 'GET'):
                 # especifica
                 while (buffer < int(rebut)):
 
-                    data_packet, clientAddress = clientSocket.recvfrom(int(paquet_size)+4)
+                    data_packet, clientAddress = clientSocket.recvfrom(int(paquet_size) + 4)
 
-                    data = struct.unpack('HH'+str(len(data_packet)-4)+'s', data_packet)
+                    data = struct.unpack('HH' + str(len(data_packet) - 4) + 's', data_packet)
+
+                    # Set the signal handler and a 5-second alarm
+                    signal.signal(signal.SIGALRM, handler)
+                    signal.alarm(30)
 
                     if not len(data[2]):
                         # Si no rebem dades sortim del bucle
                         break
 
-                    if nbloc+1 > 65535:
+                    if nbloc + 1 > 65535:
                         nbloc = -1
 
-                    if nbloc+1 == data[1]:
+                    if nbloc + 1 == data[1]:
                         nbloc = data[1]
                         ack_buffer = struct.pack('HH', 4, nbloc)
                         clientSocket.sendto(ack_buffer, (serverName, serverPort))
                         # Escrivim cada byte en l'arxiu i augmentem el buffer
                         arxiu.write(data[2])
-                        buffer += len(data_packet)-4
+                        buffer += len(data_packet) - 4
                         aux = auxiliar * 100 / int(rebut)
                         auxiliar += int(paquet_size)
 
@@ -305,6 +331,7 @@ elif (option == 'get' or option == 'GET'):
                         ack_buffer = struct.pack('HH', 5, nbloc)
                         clientSocket.sendto(ack_buffer, (serverName, serverPort))
 
+                    # View %
                     if (aux <= 5 and boolea5 == False):
                         boolea5 = True
                         proces = '[=>        5%          ]'
@@ -359,4 +386,5 @@ elif (option == 'get' or option == 'GET'):
                 print "\nAn error/incomplete file has happened"
         break
 
+# Close
 clientSocket.close()
