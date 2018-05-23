@@ -80,6 +80,9 @@ option = raw_input('Choose your option, GET or PUT the file to server: ')
 getorput = 0
 ARXIU = raw_input('Choose your file: ')
 
+# RRQ -> solicitud lectura (PUT) codi = 1
+# WRQ -> Solicitud escritura (GET) codi = 2
+
 if (option == 'put' or option == 'PUT'):
     getorput = 1
 
