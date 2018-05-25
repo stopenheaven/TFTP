@@ -180,10 +180,8 @@ elif (getorput == 2):
     print 'Paquet size:', mida_paq, '\n'
 
     while True:
-        # Obrim el fitxer en mode lectura binaria i llegim el su contingut
-        with open(ARXIU, "rb") as arxiu_size:
-            size = arxiu_size.read()
-        siz = len(size)
+        # Agafem mida arxiu
+        siz = os.stat(ARXIU).st_size
         # Send how many byte of file
         size_packet = ''
 
