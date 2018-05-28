@@ -63,6 +63,8 @@ while comprova_ack == False:
     ack_hi = struct.unpack('HH', hi_ack)
     if ack_hi[0] == 4 and ack_hi[1] == nbloc:
         comprova_ack = True
+    else:
+        print hi_ack[4:]
 
 nbloc += 1
 
@@ -85,6 +87,11 @@ while comprova_ack == False:
         ack_list = struct.pack('HH', 4, nbloc)
         clientSocket.sendto(ack_list, (serverName, serverPort))
         comprova_ack = True
+    else:
+        ack_buffer = struct.pack('HH', 5, nbloc)
+        ack_buffer = 'Error packet recieve'
+        clientSocket.sendto(ack_buffer, (serverName, serverPort))
+
 nbloc += 1
 print 'List Server folder for GET:'
 print list_packet[4:]
@@ -120,6 +127,8 @@ while comprova_ack == False:
     if ack_option[0] == 4:
         nbloc = ack_option[1]
         comprova_ack = True
+    else:
+        print option_ack[4:]
 
 nbloc += 1
 if option == 'put' or option == 'PUT':
@@ -143,6 +152,8 @@ if option == 'put' or option == 'PUT':
         if ack_option[0] == 4:
             nbloc = ack_option[1]
             comprova_ack = True
+        else:
+            print option_ack[4:]
 
     nbloc += 1
     print '\nPut the', ARXIU, 'with paquet size', paquet_size, '\n'
@@ -164,6 +175,9 @@ if option == 'put' or option == 'PUT':
             ack_size = struct.unpack('HH', size_ack)
             if ack_size[0] == 4:
                 comprova_ack = True
+            else:
+                print size_ack[4:]
+
         nbloc += 1
 
         arxiu = open(ARXIU, 'rb')
@@ -194,6 +208,8 @@ if option == 'put' or option == 'PUT':
                 aux = auxiliar * 100 / siz
                 auxiliar += int(paquet_size)
                 nbloc += 1
+            else:
+                print buffer_ack[4:]
 
             # View %
             if (aux <= 5 and boolea5 == False):
@@ -267,6 +283,8 @@ elif option == 'get' or option == 'GET':
         if ack_option[0] == 4:
             nbloc = ack_option[1]
             comprova_ack = True
+        else:
+            print option_ack[4:]
 
     nbloc += 1
     print '\nGet the', ARXIU, 'with paquet size', paquet_size, '\n'
@@ -284,6 +302,11 @@ elif option == 'get' or option == 'GET':
                 ack_size = struct.pack('HH', 4, nbloc)
                 clientSocket.sendto(ack_size, (serverName, serverPort))
                 comprova_ack = True
+            else:
+                ack_buffer = struct.pack('HH', 5, nbloc)
+                ack_buffer = 'Error packet recieve'
+                clientSocket.sendto(ack_buffer, (serverName, serverPort))
+
         if rebut:
             print "File size:", rebut, 'Bytes\n'
         # Verifiquem que el que rebem sigui un numero, en cas que
@@ -327,6 +350,7 @@ elif option == 'get' or option == 'GET':
 
                     else:
                         ack_buffer = struct.pack('HH', 5, nbloc)
+                        ack_buffer = 'Error packet recieve'
                         clientSocket.sendto(ack_buffer, (serverName, serverPort))
 
                     # View %

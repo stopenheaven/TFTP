@@ -76,6 +76,11 @@ while comprova_ack == False:
         ack_option = struct.pack('HH', 4, nbloc)
         serverSocket.sendto(ack_option, clientAddress)
         comprova_ack = True
+    else:
+        ack_buffer = struct.pack('HH', 5, nbloc)
+        ack_buffer = 'Error packet recieve'
+        serverSocket.sendto(ack_buffer, clientAddress)
+
 
 if (getorput == 1):
     print "Client select: PUT\n"
@@ -94,6 +99,10 @@ if (getorput == 1):
             ack_paq = struct.pack('HH', 4, nbloc)
             serverSocket.sendto(ack_paq, clientAddress)
             comprova_ack = True
+        else:
+            ack_buffer = struct.pack('HH', 5, nbloc)
+            ack_buffer = 'Error packet recieve'
+            serverSocket.sendto(ack_buffer, clientAddress)
 
     print 'Paquet size:', mida_paq, '\n'
 
@@ -110,6 +119,11 @@ if (getorput == 1):
                 ack_size = struct.pack('HH', 4, nbloc)
                 serverSocket.sendto(ack_size, clientAddress)
                 comprova_ack = True
+            else:
+                ack_buffer = struct.pack('HH', 5, nbloc)
+                ack_buffer = 'Error packet recieve'
+                serverSocket.sendto(ack_buffer, clientAddress)
+
         if rebut:
             print "File size:", rebut, 'Bytes\n'
         # Verifiquem que el que rebem sigui un numero, en cas que
@@ -151,6 +165,7 @@ if (getorput == 1):
 
                     else:
                         ack_buffer = struct.pack('HH', 5, nbloc)
+                        ack_buffer = 'Error packet recieve'
                         serverSocket.sendto(ack_buffer, clientAddress)
 
                 if buffer == int(rebut):
@@ -176,6 +191,10 @@ elif (getorput == 2):
             ack_paq = struct.pack('HH', 4, nbloc)
             serverSocket.sendto(ack_paq, clientAddress)
             comprova_ack = True
+        else:
+            ack_buffer = struct.pack('HH', 5, nbloc)
+            ack_buffer = 'Error packet recieve'
+            serverSocket.sendto(ack_buffer, clientAddress)
 
     print 'Paquet size:', mida_paq, '\n'
 
