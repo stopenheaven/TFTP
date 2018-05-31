@@ -25,9 +25,9 @@ clientSocket = socket(AF_INET, SOCK_DGRAM)
 # Function for timeout
 def handler(signum, frame):
     print '\n \n \n '
-    print '------------------------------------- \n'
+    print '-----------------------------------\n'
     print 'Error de timeout \n'
-    print '-------------------------------------\n'
+    print '-----------------------------------\n'
 
     clientSocket.close()
     exit()
@@ -185,7 +185,7 @@ if option == 'put' or option == 'PUT':
         buffer_size = len(buffer)
 
         print 'File size: ', siz, '\n'
-
+        count = 0
         # Send file
         while auxiliar < siz:
             # If nbloc > 65535 nbloc start to 0
@@ -208,6 +208,7 @@ if option == 'put' or option == 'PUT':
                 aux = auxiliar * 100 / siz
                 auxiliar += int(paquet_size)
                 nbloc += 1
+                count += 1
             else:
                 print buffer_ack[4:]
 
@@ -258,8 +259,10 @@ if option == 'put' or option == 'PUT':
                 print proces
 
         break
-    proces = '[==========100%========]'
+    
+    proces = '[==========100%========]\n'
     print proces
+    print 'Number packet sended: ', count
 
 elif option == 'get' or option == 'GET':
 
@@ -317,6 +320,7 @@ elif option == 'get' or option == 'GET':
             # Inicialitzem el contador que guarda la quantitat de bytes rebuts
             buffer = 0
 
+            count = 0
             # Obrim l'arxiu en mode escriptura
             with open("arxiu", "wb") as arxiu:
                 # Ens preparem per rebre l'arxiu amb longitud
@@ -347,6 +351,7 @@ elif option == 'get' or option == 'GET':
                         buffer += len(data_packet) - 4
                         aux = auxiliar * 100 / int(rebut)
                         auxiliar += int(paquet_size)
+                        count += 1
 
                     else:
                         ack_buffer = struct.pack('HH', 5, nbloc)
@@ -398,9 +403,11 @@ elif option == 'get' or option == 'GET':
                         boolea95 = True
                         proces = '[==========95%=======> ]'
                         print proces
-
-            proces = '[==========100%========]'
+            
+            
+            proces = '[==========100%========]\n'
             print proces
+            print 'Number packets recieved: ', count
 
             if buffer == int(rebut):
                 print "\nFile downloaded successfully"
