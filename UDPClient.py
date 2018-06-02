@@ -6,7 +6,6 @@ from socket import *
 import signal
 import struct
 
-
 # Default to running on localhost, port 12000
 serverName = 'localhost'
 serverPort = 12000
